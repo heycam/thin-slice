@@ -7,6 +7,9 @@ An owned slice that packs the slice storage into a single word when possible.
 ```rust
 extern crate thin_slice;
 
+use std::mem;
+use thin_slice::ThinBoxedSlice;
+
 struct Ticket {
     numbers: Box<[u8]>,
     winning: bool,
@@ -34,6 +37,7 @@ fn main() {
 Output on `x86_64`:
 
 ```
+Numbers: [4, 8, 15, 16, 23, 42]
 size_of::<usize>():      8
 size_of::<Ticket>():     24
 size_of::<ThinTicket>(): 16
