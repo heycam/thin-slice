@@ -29,14 +29,14 @@
 use std::cmp::Ordering;
 use std::fmt;
 use std::hash::{Hash, Hasher};
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
 use std::marker::PhantomData;
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
 use std::mem;
 use std::ops::{Deref, DerefMut};
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
 use std::ptr::NonNull;
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
 use std::slice;
 
 /// An owned slice that tries to use only one word of storage.
@@ -56,38 +56,38 @@ pub struct ThinBoxedSlice<T> {
     ///
     /// If len >= 0xffff, then the top 16 bits of data will be 0xffff, and
     /// the lower 48 bits will be a pointer to a heap allocated `Box<[T]>`.
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
     data: NonNull<()>,
 
-    #[cfg(not(target_arch = "x86_64"))]
+    #[cfg(not(all(target_arch = "x86_64", target_pointer_width = "64")))]
     data: Box<[T]>,
 
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
     _phantom: PhantomData<Box<[T]>>,
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
 const TAG_MASK: usize = 0xffff000000000000;
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
 const PTR_MASK: usize = 0x0000ffffffffffff;
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
 const PTR_HIGH: usize = 0x0000800000000000;
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
 const TAG_SHIFT: usize = 48;
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
 const TAG_LIMIT: usize = TAG_MASK >> TAG_SHIFT;
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
 enum Storage<T> {
     Inline(*mut T, usize),
     Spilled(*mut Box<[T]>),
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
 impl<T> ThinBoxedSlice<T> {
     /// Constructs a `ThinBoxedSlice` from a raw pointer.
     ///
@@ -203,7 +203,7 @@ impl<T> ThinBoxedSlice<T> {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(all(target_arch = "x86_64", target_pointer_width = "64")))]
 impl<T> ThinBoxedSlice<T> {
     /// Constructs a `ThinBoxedSlice` from a raw pointer.
     ///
@@ -284,7 +284,7 @@ impl<T> ThinBoxedSlice<T> {
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
 impl<T> Storage<T> {
     #[inline]
     fn from_data(data: NonNull<()>) -> Storage<T> {
@@ -343,7 +343,7 @@ impl<T> Into<Box<[T]>> for ThinBoxedSlice<T> {
 unsafe impl<T: Send> Send for ThinBoxedSlice<T> {}
 unsafe impl<T: Sync> Sync for ThinBoxedSlice<T> {}
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
 impl<T> Drop for ThinBoxedSlice<T> {
     fn drop(&mut self) {
         let _ = Into::<Box<[T]>>::into(
@@ -356,7 +356,7 @@ impl<T> Drop for ThinBoxedSlice<T> {
 }
 
 impl<T: Clone> Clone for ThinBoxedSlice<T> {
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
     fn clone(&self) -> Self {
         unsafe {
             match self.storage() {
@@ -373,7 +373,7 @@ impl<T: Clone> Clone for ThinBoxedSlice<T> {
         }
     }
 
-    #[cfg(not(target_arch = "x86_64"))]
+    #[cfg(not(all(target_arch = "x86_64", target_pointer_width = "64")))]
     fn clone(&self) -> Self {
         ThinBoxedSlice {
             data: self.data.clone(),
@@ -396,7 +396,7 @@ impl<T> AsMut<[T]> for ThinBoxedSlice<T> {
 impl<T> Deref for ThinBoxedSlice<T> {
     type Target = [T];
 
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
     fn deref(&self) -> &[T] {
         unsafe {
             match self.storage() {
@@ -410,14 +410,14 @@ impl<T> Deref for ThinBoxedSlice<T> {
         }
     }
 
-    #[cfg(not(target_arch = "x86_64"))]
+    #[cfg(not(all(target_arch = "x86_64", target_pointer_width = "64")))]
     fn deref(&self) -> &[T] {
         &*self.data
     }
 }
 
 impl<T> DerefMut for ThinBoxedSlice<T> {
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
     fn deref_mut(&mut self) -> &mut [T] {
         unsafe {
             match self.storage() {
@@ -431,7 +431,7 @@ impl<T> DerefMut for ThinBoxedSlice<T> {
         }
     }
 
-    #[cfg(not(target_arch = "x86_64"))]
+    #[cfg(not(all(target_arch = "x86_64", target_pointer_width = "64")))]
     fn deref_mut(&mut self) -> &mut [T] {
         &mut *self.data
     }
@@ -498,7 +498,7 @@ impl<T> fmt::Pointer for ThinBoxedSlice<T> {
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
 #[test]
 fn test_spilled_storage() {
     let x = ThinBoxedSlice::from(vec![0; TAG_LIMIT - 1].into_boxed_slice());
@@ -508,7 +508,7 @@ fn test_spilled_storage() {
     assert!(x.spilled_storage().is_some());
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
 #[test]
 fn test_from_raw_large() {
     let mut vec = vec![0; TAG_LIMIT];
@@ -519,7 +519,7 @@ fn test_from_raw_large() {
     assert_eq!(x[123], 456);
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
 #[test]
 fn test_into_raw_large() {
     let mut vec = vec![0; TAG_LIMIT];
@@ -531,7 +531,7 @@ fn test_into_raw_large() {
     assert_eq!(y[123], 456);
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64"))]
 #[test]
 fn test_leak_large() {
     let mut vec = vec![0; TAG_LIMIT];
