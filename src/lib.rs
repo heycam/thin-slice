@@ -39,6 +39,13 @@ use std::ptr::NonNull;
 #[cfg(target_arch = "x86_64")]
 use std::slice;
 
+#[cfg(feature = "serde")]
+extern crate serde;
+#[cfg(feature = "serde")]
+use serde::ser::{Serialize, SerializeSeq, Serializer};
+#[cfg(feature = "serde")]
+use serde::de::{Deserialize, Deserializer};
+
 /// An owned slice that tries to use only one word of storage.
 ///
 /// See the [module-level documentation](index.html) for more.
@@ -498,6 +505,38 @@ impl<T> fmt::Pointer for ThinBoxedSlice<T> {
     }
 }
 
+#[cfg(feature = "serde")]
+impl<V> Serialize for ThinBoxedSlice<V>
+where
+    V: Serialize
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let data: &[V] = &*self;
+        let mut seq = serializer.serialize_seq(Some(data.len()))?;
+        for element in data {
+            seq.serialize_element(element)?;
+        }
+        seq.end()
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de, V> Deserialize<'de> for ThinBoxedSlice<V>
+where
+    V: Deserialize<'de>
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let data: Box<[V]> = Deserialize::deserialize(deserializer)?;
+        Ok(data.into())
+    }
+}
+
 #[cfg(target_arch = "x86_64")]
 #[test]
 fn test_spilled_storage() {
@@ -541,4 +580,13 @@ fn test_leak_large() {
     let static_ref = ThinBoxedSlice::leak(x);
     static_ref[123] *= 1000;
     assert_eq!(static_ref[123], 456000);
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn test_serde() {
+    let x = ThinBoxedSlice::from(vec![4,2,3].into_boxed_slice());
+    let serialized_x = bincode::serialize(&x).expect("Serialization failed");
+    let deserialized_x = bincode::deserialize(serialized_x.as_slice()).expect("Deserialization failed");
+    assert_eq!(x, deserialized_x);
 }

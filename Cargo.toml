@@ -9,3 +9,7 @@ readme = "README.md"
 keywords = ["slice", "tagged", "pointer"]
 
 [dependencies]
+serde = { version = "1.0.130", optional = true }
+
+[dev-dependencies]
+bincode = "1.3.3"
